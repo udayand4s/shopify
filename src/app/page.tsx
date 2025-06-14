@@ -20,14 +20,33 @@ import {
   Twitter,
   Facebook,
   Instagram,
-  Linkedin
+  Linkedin,
+  User,
+  Settings,
+  LogOut
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false)
   const router = useRouter()
+  
+  // Simulating Clerk authentication state - replace with actual Clerk hooks
+  const [isSignedIn, setIsSignedIn] = useState<boolean>(false)
+  const [user, setUser] = useState<{name: string, email: string, avatar?: string} | null>(null)
+
+  // Mock user data when signed in
+  React.useEffect(() => {
+    if (isSignedIn && !user) {
+      setUser({
+        name: "John Doe",
+        email: "john@example.com",
+        avatar: undefined
+      })
+    }
+  }, [isSignedIn, user])
 
   const features = [
     {
@@ -153,6 +172,17 @@ export default function Home() {
     }
   }
 
+  const handleSignOut = () => {
+    setIsSignedIn(false)
+    setUser(null)
+    setIsProfileOpen(false)
+    // Add actual Clerk sign out logic here
+  }
+
+  const toggleSignIn = () => {
+    setIsSignedIn(!isSignedIn)
+  }
+
   return (
     <div className="min-h-screen bg-slate-900 text-white">
       {/* Header */}
@@ -169,23 +199,93 @@ export default function Home() {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              <button onClick={(e) => handleNavClick(e, 'features')} className="text-slate-300 hover:text-white transition-colors">Features</button>
-              <button onClick={(e) => handleNavClick(e, 'pricing')} className="text-slate-300 hover:text-white transition-colors">Pricing</button>
-              <button onClick={(e) => handleNavClick(e, 'testimonials')} className="text-slate-300 hover:text-white transition-colors">Success Stories</button>
-              <button onClick={(e) => handleNavClick(e, 'support')} className="text-slate-300 hover:text-white transition-colors">Support</button>
+              {isSignedIn ? (
+                <>
+                  <button onClick={() => router.push('/dashboard')} className="text-slate-300 hover:text-white transition-colors">Dashboard</button>
+                  <button onClick={() => router.push('/stores')} className="text-slate-300 hover:text-white transition-colors">My Stores</button>
+                  <button onClick={(e) => handleNavClick(e, 'features')} className="text-slate-300 hover:text-white transition-colors">Features</button>
+                  <button onClick={(e) => handleNavClick(e, 'support')} className="text-slate-300 hover:text-white transition-colors">Support</button>
+                </>
+              ) : (
+                <>
+                  <button onClick={(e) => handleNavClick(e, 'features')} className="text-slate-300 hover:text-white transition-colors">Features</button>
+                  <button onClick={(e) => handleNavClick(e, 'pricing')} className="text-slate-300 hover:text-white transition-colors">Pricing</button>
+                  <button onClick={(e) => handleNavClick(e, 'testimonials')} className="text-slate-300 hover:text-white transition-colors">Success Stories</button>
+                  <button onClick={(e) => handleNavClick(e, 'support')} className="text-slate-300 hover:text-white transition-colors">Support</button>
+                </>
+              )}
             </nav>
 
             {/* Desktop CTA */}
-             <div className="hidden md:flex items-center space-x-4">
-              <button
-                className="text-slate-300 hover:text-white transition-colors"
-                onClick={() => router.push('/sign-in')}
-              >
-                Sign In
-              </button>
-              <button className="bg-gradient-to-r from-purple-600 to-cyan-600 text-white px-6 py-2 rounded-lg hover:from-purple-700 hover:to-cyan-700 transition-all transform hover:scale-105">
-                Start Free Trial
-              </button>
+            <div className="hidden md:flex items-center space-x-4">
+              {isSignedIn ? (
+                <div className="relative">
+                  <button
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    className="flex items-center space-x-3 text-slate-300 hover:text-white transition-colors"
+                  >
+                    <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full flex items-center justify-center">
+                      {user?.avatar ? (
+                        <img src={user.avatar} alt="Profile" className="w-8 h-8 rounded-full" />
+                      ) : (
+                        <User className="h-4 w-4 text-white" />
+                      )}
+                    </div>
+                    <span className="font-medium">{user?.name}</span>
+                    <ChevronDown className={`h-4 w-4 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {isProfileOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-slate-800 rounded-lg border border-slate-700 shadow-lg">
+                      <div className="p-3 border-b border-slate-700">
+                        <div className="font-medium text-white">{user?.name}</div>
+                        <div className="text-sm text-slate-400">{user?.email}</div>
+                      </div>
+                      <div className="py-1">
+                        <button
+                          onClick={() => {
+                            setIsProfileOpen(false)
+                            router.push('/profile')
+                          }}
+                          className="flex items-center space-x-2 w-full px-3 py-2 text-left text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+                        >
+                          <User className="h-4 w-4" />
+                          <span>Profile</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsProfileOpen(false)
+                            router.push('/settings')
+                          }}
+                          className="flex items-center space-x-2 w-full px-3 py-2 text-left text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+                        >
+                          <Settings className="h-4 w-4" />
+                          <span>Settings</span>
+                        </button>
+                        <button
+                          onClick={handleSignOut}
+                          className="flex items-center space-x-2 w-full px-3 py-2 text-left text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          <span>Sign Out</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <button
+                    className="text-slate-300 hover:text-white transition-colors"
+                    onClick={() => router.push('/sign-in')}
+                  >
+                    Sign In
+                  </button>
+                  <button className="bg-gradient-to-r from-purple-600 to-cyan-600 text-white px-6 py-2 rounded-lg hover:from-purple-700 hover:to-cyan-700 transition-all transform hover:scale-105">
+                    Start Free Trial
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Mobile menu button */}
@@ -202,29 +302,81 @@ export default function Home() {
           {isMenuOpen && (
             <div className="md:hidden">
               <div className="px-2 pt-2 pb-3 space-y-1 bg-slate-800 rounded-lg mt-2">
-                <button onClick={(e) => handleNavClick(e, 'features')} className="block w-full text-left px-3 py-2 text-slate-300 hover:text-white">Features</button>
-                <button onClick={(e) => handleNavClick(e, 'pricing')} className="block w-full text-left px-3 py-2 text-slate-300 hover:text-white">Pricing</button>
-                <button onClick={(e) => handleNavClick(e, 'testimonials')} className="block w-full text-left px-3 py-2 text-slate-300 hover:text-white">Success Stories</button>
-                <button onClick={(e) => handleNavClick(e, 'support')} className="block w-full text-left px-3 py-2 text-slate-300 hover:text-white">Support</button>
-                <div className="border-t border-slate-700 pt-2">
-                  <button
-                    className="block w-full text-left px-3 py-2 text-slate-300 hover:text-white"
-                    onClick={() => {
-                      setIsMenuOpen(false)
-                      router.push('/sign-in')
-                    }}
-                  >
-                    Sign In
-                  </button>
-                  <button className="block w-full bg-gradient-to-r from-purple-600 to-cyan-600 text-white px-3 py-2 rounded-lg mt-2 hover:from-purple-700 hover:to-cyan-700">
-                    Start Free Trial
-                  </button>
-                </div>
+                {isSignedIn ? (
+                  <>
+                    <div className="px-3 py-2 border-b border-slate-700 mb-2">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full flex items-center justify-center">
+                          <User className="h-4 w-4 text-white" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-white">{user?.name}</div>
+                          <div className="text-sm text-slate-400">{user?.email}</div>
+                        </div>
+                      </div>
+                    </div>
+                    <button onClick={() => { setIsMenuOpen(false); router.push('/dashboard') }} className="block w-full text-left px-3 py-2 text-slate-300 hover:text-white">Dashboard</button>
+                    <button onClick={() => { setIsMenuOpen(false); router.push('/stores') }} className="block w-full text-left px-3 py-2 text-slate-300 hover:text-white">My Stores</button>
+                    <button onClick={(e) => handleNavClick(e, 'features')} className="block w-full text-left px-3 py-2 text-slate-300 hover:text-white">Features</button>
+                    <button onClick={(e) => handleNavClick(e, 'support')} className="block w-full text-left px-3 py-2 text-slate-300 hover:text-white">Support</button>
+                    <div className="border-t border-slate-700 pt-2">
+                      <button
+                        onClick={() => { setIsMenuOpen(false); router.push('/profile') }}
+                        className="block w-full text-left px-3 py-2 text-slate-300 hover:text-white"
+                      >
+                        Profile
+                      </button>
+                      <button
+                        onClick={() => { setIsMenuOpen(false); router.push('/settings') }}
+                        className="block w-full text-left px-3 py-2 text-slate-300 hover:text-white"
+                      >
+                        Settings
+                      </button>
+                      <button
+                        onClick={() => { setIsMenuOpen(false); handleSignOut() }}
+                        className="block w-full text-left px-3 py-2 text-slate-300 hover:text-white"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={(e) => handleNavClick(e, 'features')} className="block w-full text-left px-3 py-2 text-slate-300 hover:text-white">Features</button>
+                    <button onClick={(e) => handleNavClick(e, 'pricing')} className="block w-full text-left px-3 py-2 text-slate-300 hover:text-white">Pricing</button>
+                    <button onClick={(e) => handleNavClick(e, 'testimonials')} className="block w-full text-left px-3 py-2 text-slate-300 hover:text-white">Success Stories</button>
+                    <button onClick={(e) => handleNavClick(e, 'support')} className="block w-full text-left px-3 py-2 text-slate-300 hover:text-white">Support</button>
+                    <div className="border-t border-slate-700 pt-2">
+                      <button
+                        className="block w-full text-left px-3 py-2 text-slate-300 hover:text-white"
+                        onClick={() => {
+                          setIsMenuOpen(false)
+                          router.push('/sign-in')
+                        }}
+                      >
+                        Sign In
+                      </button>
+                      <button className="block w-full bg-gradient-to-r from-purple-600 to-cyan-600 text-white px-3 py-2 rounded-lg mt-2 hover:from-purple-700 hover:to-cyan-700">
+                        Start Free Trial
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
         </div>
       </header>
+
+      {/* Demo Toggle Button (for testing) */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <button
+          onClick={toggleSignIn}
+          className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm"
+        >
+          {isSignedIn ? 'Sign Out (Demo)' : 'Sign In (Demo)'}
+        </button>
+      </div>
 
       {/* Hero Section */}
       <section className="relative min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 pt-16">
@@ -246,12 +398,25 @@ export default function Home() {
               
               <div className="space-y-4">
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
-                  Build Your
-                  <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent"> Digital Empire </span>
-                  in Minutes
+                  {isSignedIn ? (
+                    <>
+                      Welcome back,
+                      <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent"> {user?.name?.split(' ')[0]} </span>
+                      Let's Build Together
+                    </>
+                  ) : (
+                    <>
+                      Build Your
+                      <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent"> Digital Empire </span>
+                      in Minutes
+                    </>
+                  )}
                 </h1>
                 <p className="text-xl text-slate-300 leading-relaxed max-w-2xl">
-                  Transform your business with our cutting-edge e-commerce platform. From AI-powered insights to seamless integrations, we provide everything you need to dominate your market.
+                  {isSignedIn 
+                    ? "Ready to take your business to the next level? Access your dashboard to manage your stores, view analytics, and grow your empire."
+                    : "Transform your business with our cutting-edge e-commerce platform. From AI-powered insights to seamless integrations, we provide everything you need to dominate your market."
+                  }
                 </p>
               </div>
 
@@ -273,14 +438,34 @@ export default function Home() {
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4">
-                <button className="bg-gradient-to-r from-purple-600 to-cyan-600 text-white px-8 py-4 rounded-lg hover:from-purple-700 hover:to-cyan-700 transition-all transform hover:scale-105 flex items-center justify-center space-x-2">
-                  <span>Start Free Trial</span>
-                  <ArrowRight className="h-5 w-5" />
-                </button>
-                <button className="border border-slate-600 text-white px-8 py-4 rounded-lg hover:bg-slate-800 transition-all flex items-center justify-center space-x-2">
-                  <Play className="h-5 w-5" />
-                  <span>Watch Demo</span>
-                </button>
+                {isSignedIn ? (
+                  <>
+                    <button 
+                      onClick={() => router.push('/dashboard')}
+                      className="bg-gradient-to-r from-purple-600 to-cyan-600 text-white px-8 py-4 rounded-lg hover:from-purple-700 hover:to-cyan-700 transition-all transform hover:scale-105 flex items-center justify-center space-x-2"
+                    >
+                      <span>Go to Dashboard</span>
+                      <ArrowRight className="h-5 w-5" />
+                    </button>
+                    <button 
+                      onClick={() => router.push('/stores/new')}
+                      className="border border-slate-600 text-white px-8 py-4 rounded-lg hover:bg-slate-800 transition-all flex items-center justify-center space-x-2"
+                    >
+                      <span>Create New Store</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button className="bg-gradient-to-r from-purple-600 to-cyan-600 text-white px-8 py-4 rounded-lg hover:from-purple-700 hover:to-cyan-700 transition-all transform hover:scale-105 flex items-center justify-center space-x-2">
+                      <span>Start Free Trial</span>
+                      <ArrowRight className="h-5 w-5" />
+                    </button>
+                    <button className="border border-slate-600 text-white px-8 py-4 rounded-lg hover:bg-slate-800 transition-all flex items-center justify-center space-x-2">
+                      <Play className="h-5 w-5" />
+                      <span>Watch Demo</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -290,18 +475,18 @@ export default function Home() {
                 <div className="space-y-4">
                   <div className="flex items-center space-x-4">
                     <div className="bg-green-500 w-3 h-3 rounded-full"></div>
-                    <div className="text-slate-300">Your Store Dashboard</div>
+                    <div className="text-slate-300">{isSignedIn ? 'Your Store Dashboard' : 'Your Store Dashboard'}</div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-slate-800/50 p-4 rounded-lg">
                       <TrendingUp className="h-8 w-8 text-green-400 mb-2" />
                       <div className="text-sm text-slate-400">Revenue</div>
-                      <div className="text-xl font-bold">$125,430</div>
+                      <div className="text-xl font-bold">{isSignedIn ? '$125,430' : '$125,430'}</div>
                     </div>
                     <div className="bg-slate-800/50 p-4 rounded-lg">
                       <Users className="h-8 w-8 text-purple-400 mb-2" />
                       <div className="text-sm text-slate-400">Customers</div>
-                      <div className="text-xl font-bold">8,247</div>
+                      <div className="text-xl font-bold">{isSignedIn ? '8,247' : '8,247'}</div>
                     </div>
                   </div>
                 </div>
@@ -416,6 +601,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+
 
       {/* FAQ Section */}
       <section id="support" className="py-20">
